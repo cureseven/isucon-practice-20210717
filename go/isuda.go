@@ -323,7 +323,7 @@ var KeywordLinkMapLock = sync.RWMutex{}
 
 type Keyword struct {
 	Keyword string
-	Link    string
+	Link string
 }
 
 func setupKeywordLinkMap() error {
@@ -371,12 +371,8 @@ func htmlify(w http.ResponseWriter, r *http.Request, content string) string {
 
 	content = html.EscapeString(content)
 
-	// 二重置換しないように一度、置換対象を仮名へ変換
-	for i, kl := range KeywordLinks {
-		content = strings.Replace(content, kl.Keyword, fmt.Sprintf("###%d###", i), -1)
-	}
-	for i, kl := range KeywordLinks {
-		content = strings.Replace(content, fmt.Sprintf("###%d###", i), kl.Link, -1)
+	for _, kl := range KeywordLinks {
+		content = strings.Replace(content, kl.Keyword, kl.Link, -1)
 	}
 
 	return strings.Replace(content, "\n", "<br />\n", -1)
