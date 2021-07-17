@@ -9,6 +9,8 @@ build:
 truncate-logs:
 	sudo truncate --size 0 /var/log/nginx/access.log
 	sudo truncate --size 0 /var/log/nginx/error.log
+	sudo truncate --size 0 /var/log/mysql/error.log
+	sudo truncate --size 0 /var/lib/mysql/mysql-slow.log
 
 stop-services:
 	sudo systemctl stop nginx
