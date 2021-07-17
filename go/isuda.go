@@ -349,7 +349,6 @@ func loadStars(keyword string) []*Star {
 }
 
 func starsHandler(keyword string) []*Star {
-	keyword := r.FormValue("keyword")
 	rows, err := isutardb.Query(`SELECT * FROM star WHERE keyword = ?`, keyword)
 	if err != nil && err != sql.ErrNoRows {
 		panicIf(err)
