@@ -360,7 +360,7 @@ func starsHandler(keyword string) []*Star {
 		s := Star{}
 		err := rows.Scan(&s.ID, &s.Keyword, &s.UserName, &s.CreatedAt)
 		panicIf(err)
-		stars = append(stars, s)
+		stars = append(stars, &s)
 	}
 	rows.Close()
 	return stars
