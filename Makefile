@@ -19,6 +19,6 @@ start-services:
 	sudo systemctl start nginx
 
 bench:
-	../isucon6q/isucon6-bench-worker.service
+	cd ~/isucon6q && ./isucon6q-bench
 
-gogo: stop-services start-services bench
+gogo: stop-services start-services build bench
