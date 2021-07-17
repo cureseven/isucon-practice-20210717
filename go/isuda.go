@@ -337,30 +337,26 @@ func setupKeywordLinkMap() error {
 		return err
 	}
 
-	var keywords []string
+	KeywordLinks = []Keyword{}
+
 	for rows.Next() {
 		var k string
 		if err := rows.Scan(&k); err != nil {
 			return err
 		}
 
-		keywords = append(keywords, k)
-	}
-	rows.Close()
-
-	KeywordLinks = make([]Keyword, len(keywords))
-	for i, kw := range keywords {
-		u, err := url.Parse(baseUrl.String() + "/keyword/" + pathURIEscape(kw))
+		u, err := url.Parse(baseUrl.String() + "/keyword/" + pathURIEscape(k))
 		if err != nil {
 			return err
 		}
-		link := fmt.Sprintf("<a href=\"%s\">%s</a>", u, html.EscapeString(kw))
+		link := fmt.Sprintf("<a href=\"%s\">%s</a>", u, html.EscapeString(k))
 
-		KeywordLinks[i] = Keyword{
-			Keyword: kw,
+		KeywordLinks = append(KeywordLinks, Keyword{
+			Keyword: k,
 			Link:    link,
-		}
+		})
 	}
+	rows.Close()
 
 	return nil
 }
