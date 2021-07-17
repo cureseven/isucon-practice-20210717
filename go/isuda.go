@@ -311,15 +311,20 @@ func keywordByKeywordDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	_, err = db.Exec(`DELETE FROM entry WHERE keyword = ?`, keyword)
 	panicIf(err)
 
-	KeywordLinkMapLock.Lock()
-	delete(KeywordLinkMap, keyword)
-	KeywordLinkMapLock.Unlock()
+	if err := setupKeywordLinkMap(); err != nil {
+		panicIf(err)
+	}
 
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-var KeywordLinkMap = map[string]string{}
+var KeywordLinks []Keyword
 var KeywordLinkMapLock = sync.RWMutex{}
+
+type Keyword struct {
+	Keyword string
+	Link string
+}
 
 func setupKeywordLinkMap() error {
 	KeywordLinkMapLock.Lock()
@@ -343,15 +348,18 @@ func setupKeywordLinkMap() error {
 	}
 	rows.Close()
 
-	KeywordLinkMap = map[string]string{}
-	for _, kw := range keywords {
+	KeywordLinks = make([]Keyword, len(keywords))
+	for i, kw := range keywords {
 		u, err := url.Parse(baseUrl.String() + "/keyword/" + pathURIEscape(kw))
 		if err != nil {
 			return err
 		}
 		link := fmt.Sprintf("<a href=\"%s\">%s</a>", u, html.EscapeString(kw))
 
-		KeywordLinkMap[kw] = link
+		KeywordLinks[i] = Keyword{
+			Keyword: kw,
+			Link:    link,
+		}
 	}
 
 	return nil
@@ -367,8 +375,8 @@ func htmlify(w http.ResponseWriter, r *http.Request, content string) string {
 
 	content = html.EscapeString(content)
 
-	for kw, link := range KeywordLinkMap {
-		content = strings.Replace(content, kw, link, -1)
+	for _, kl := range KeywordLinks {
+		content = strings.Replace(content, kl.Keyword, kl.Link, -1)
 	}
 
 	return strings.Replace(content, "\n", "<br />\n", -1)
