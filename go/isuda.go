@@ -36,7 +36,7 @@ var (
 
 	baseUrl  *url.URL
 	db       *sql.DB
-	isutardb *isutarsql.DB
+	isutardb *sql.DB
 	re       *render.Render
 	store    *sessions.CookieStore
 
@@ -458,7 +458,7 @@ func main() {
 		isutarDbname = "isutar"
 	}
 
-	isutardb, err = isutarsql.Open("mysql", fmt.Sprintf(
+	isutardb, err = sql.Open("mysql", fmt.Sprintf(
 		"%s:%s@tcp(%s:%d)/%s?loc=Local&parseTime=true",
 		isutarUser, isutarPassword, isutarHost, isutarPort, isutarDbname,
 	))
