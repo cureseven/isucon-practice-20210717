@@ -20,6 +20,7 @@ import (
 
 	"github.com/Songmu/strrand"
 	_ "github.com/go-sql-driver/mysql"
+	"net/http/pprof"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/unrolled/render"
@@ -512,5 +513,6 @@ func main() {
 	k.Methods("POST").HandlerFunc(myHandler(keywordByKeywordDeleteHandler))
 
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./public/")))
+	r.HandleFunc("/debug/pprof/profile", pprof.Profile)
 	log.Fatal(http.ListenAndServe(":5000", r))
 }
