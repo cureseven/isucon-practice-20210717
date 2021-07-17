@@ -14,9 +14,9 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/Songmu/strrand"
 	_ "github.com/go-sql-driver/mysql"
@@ -76,6 +76,10 @@ func initializeHandler(w http.ResponseWriter, r *http.Request) {
 	resp, err := http.Get(fmt.Sprintf("%s/initialize", isutarEndpoint))
 	panicIf(err)
 	defer resp.Body.Close()
+
+	if err := setupKeywordLinkMap(); err != nil {
+		panicIf(err)
+	}
 
 	re.JSON(w, http.StatusOK, map[string]string{"result": "ok"})
 }
@@ -170,6 +174,11 @@ func keywordPostHandler(w http.ResponseWriter, r *http.Request) {
 		author_id = ?, keyword = ?, description = ?, updated_at = NOW()
 	`, userID, keyword, description, userID, keyword, description)
 	panicIf(err)
+
+	if err := setupKeywordLinkMap(); err != nil {
+		panicIf(err)
+	}
+
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
@@ -301,43 +310,67 @@ func keywordByKeywordDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	_, err = db.Exec(`DELETE FROM entry WHERE keyword = ?`, keyword)
 	panicIf(err)
+
+	KeywordLinkMapLock.Lock()
+	delete(KeywordLinkMap, keyword)
+	KeywordLinkMapLock.Unlock()
+
 	http.Redirect(w, r, "/", http.StatusFound)
+}
+
+var KeywordLinkMap = map[string]string{}
+var KeywordLinkMapLock = sync.RWMutex{}
+
+func setupKeywordLinkMap() error {
+	KeywordLinkMapLock.Lock()
+	defer KeywordLinkMapLock.Unlock()
+
+	rows, err := db.Query(`
+		SELECT keyword FROM entry ORDER BY CHARACTER_LENGTH(keyword) DESC
+	`)
+	if err != nil {
+		return err
+	}
+
+	var keywords []string
+	for rows.Next() {
+		var k string
+		if err := rows.Scan(&k); err != nil {
+			return err
+		}
+
+		keywords = append(keywords, k)
+	}
+	rows.Close()
+
+	KeywordLinkMap = map[string]string{}
+	for _, kw := range keywords {
+		u, err := url.Parse(baseUrl.String() + "/keyword/" + pathURIEscape(kw))
+		if err != nil {
+			return err
+		}
+		link := fmt.Sprintf("<a href=\"%s\">%s</a>", u, html.EscapeString(kw))
+
+		KeywordLinkMap[kw] = link
+	}
+
+	return nil
 }
 
 func htmlify(w http.ResponseWriter, r *http.Request, content string) string {
 	if content == "" {
 		return ""
 	}
-	rows, err := db.Query(`
-		SELECT keyword FROM entry ORDER BY CHARACTER_LENGTH(keyword) DESC
-	`)
-	panicIf(err)
-	entries := make([]*Entry, 0, 500)
-	for rows.Next() {
-		e := Entry{}
-		err := rows.Scan(&e.Keyword)
-		panicIf(err)
-		entries = append(entries, &e)
-	}
-	rows.Close()
 
-	keywords := make([]string, 0, 500)
-	for _, entry := range entries {
-		keywords = append(keywords, regexp.QuoteMeta(entry.Keyword))
-	}
-	re := regexp.MustCompile("("+strings.Join(keywords, "|")+")")
-	kw2sha := make(map[string]string)
-	content = re.ReplaceAllStringFunc(content, func(kw string) string {
-		kw2sha[kw] = "isuda_" + fmt.Sprintf("%x", sha1.Sum([]byte(kw)))
-		return kw2sha[kw]
-	})
+	KeywordLinkMapLock.RLock()
+	defer KeywordLinkMapLock.RUnlock()
+
 	content = html.EscapeString(content)
-	for kw, hash := range kw2sha {
-		u, err := r.URL.Parse(baseUrl.String()+"/keyword/" + pathURIEscape(kw))
-		panicIf(err)
-		link := fmt.Sprintf("<a href=\"%s\">%s</a>", u, html.EscapeString(kw))
-		content = strings.Replace(content, hash, link, -1)
+
+	for kw, link := range KeywordLinkMap {
+		content = strings.Replace(content, kw, link, -1)
 	}
+
 	return strings.Replace(content, "\n", "<br />\n", -1)
 }
 
@@ -421,6 +454,10 @@ func main() {
 	}
 	db.Exec("SET SESSION sql_mode='TRADITIONAL,NO_AUTO_VALUE_ON_ZERO,ONLY_FULL_GROUP_BY'")
 	db.Exec("SET NAMES utf8mb4")
+
+	if err := setupKeywordLinkMap(); err != nil {
+		panicIf(err)
+	}
 
 	isutarEndpoint = os.Getenv("ISUTAR_ORIGIN")
 	if isutarEndpoint == "" {
