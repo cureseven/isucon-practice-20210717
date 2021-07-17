@@ -1,4 +1,4 @@
-.PHONY: build stop-services start-services bench gogo
+.PHONY: build stop-services start-services bench gogo truncate-logs kataribe
 
 all: gogo
 
@@ -30,4 +30,4 @@ kataribe:
 	cat /tmp/last-access.log | ./kataribe -conf kataribe.toml > /tmp/kataribe.log
 	cat /tmp/kataribe.log
 
-gogo: stop-services truncate-logs start-services build bench
+gogo: stop-services truncate-logs build start-services bench
