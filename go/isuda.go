@@ -352,7 +352,6 @@ func starsHandler(keyword string) []*Star {
 	rows, err := isutardb.Query(`SELECT * FROM star WHERE keyword = ?`, keyword)
 	if err != nil && err != sql.ErrNoRows {
 		panicIf(err)
-		return
 	}
 
 	stars := make([]*Star, 0, 10)
