@@ -359,7 +359,7 @@ func starsHandler(keyword string) []Star {
 		return
 	}
 
-	stars := make([]Star, 0, 10)
+	stars := make([]*Star, 0, 10)
 	for rows.Next() {
 		s := Star{}
 		err := rows.Scan(&s.ID, &s.Keyword, &s.UserName, &s.CreatedAt)
