@@ -440,7 +440,7 @@ func main() {
 	if isutarPortstr == "" {
 		isutarPortstr = "3306"
 	}
-	isutarPort, err := strconv.Atoi(isutarP)
+	isutarPort, err := strconv.Atoi(isutarPortstr)
 	if err != nil {
 		log.Fatalf("Failed to read DB port number from an environment variable ISUTAR_DB_PORT.\nError: %s", err.Error())
 	}
