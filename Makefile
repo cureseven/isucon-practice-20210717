@@ -21,4 +21,7 @@ start-services:
 bench:
 	cd ~/isucon6q && ./isucon6q-bench
 
+kataribe:
+	sudo cat /var/log/nginx/access.log | ./kataribe
+
 gogo: stop-services start-services build bench
