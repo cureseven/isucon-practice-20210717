@@ -34,10 +34,11 @@ var (
 	isutarEndpoint string
 	isupamEndpoint string
 
-	baseUrl *url.URL
-	db      *sql.DB
-	re      *render.Render
-	store   *sessions.CookieStore
+	baseUrl  *url.URL
+	db       *sql.DB
+	isutardb *isutarsql.DB
+	re       *render.Render
+	store    *sessions.CookieStore
 
 	errInvalidUser = errors.New("Invalid User")
 )
@@ -325,7 +326,7 @@ func htmlify(w http.ResponseWriter, r *http.Request, content string) string {
 	for _, entry := range entries {
 		keywords = append(keywords, regexp.QuoteMeta(entry.Keyword))
 	}
-	re := regexp.MustCompile("("+strings.Join(keywords, "|")+")")
+	re := regexp.MustCompile("(" + strings.Join(keywords, "|") + ")")
 	kw2sha := make(map[string]string)
 	content = re.ReplaceAllStringFunc(content, func(kw string) string {
 		kw2sha[kw] = "isuda_" + fmt.Sprintf("%x", sha1.Sum([]byte(kw)))
@@ -333,7 +334,7 @@ func htmlify(w http.ResponseWriter, r *http.Request, content string) string {
 	})
 	content = html.EscapeString(content)
 	for kw, hash := range kw2sha {
-		u, err := r.URL.Parse(baseUrl.String()+"/keyword/" + pathURIEscape(kw))
+		u, err := r.URL.Parse(baseUrl.String() + "/keyword/" + pathURIEscape(kw))
 		panicIf(err)
 		link := fmt.Sprintf("<a href=\"%s\">%s</a>", u, html.EscapeString(kw))
 		content = strings.Replace(content, hash, link, -1)
@@ -390,37 +391,69 @@ func getSession(w http.ResponseWriter, r *http.Request) *sessions.Session {
 }
 
 func main() {
-	host := os.Getenv("ISUDA_DB_HOST")
-	if host == "" {
-		host = "localhost"
+	isudaHost := os.Getenv("ISUDA_DB_HOST")
+	if isudaHost == "" {
+		isudaHost = "localhost"
 	}
-	portstr := os.Getenv("ISUDA_DB_PORT")
-	if portstr == "" {
-		portstr = "3306"
+	isudaPortstr := os.Getenv("ISUDA_DB_PORT")
+	if isudaPortstr == "" {
+		isudaPortstr = "3306"
 	}
-	port, err := strconv.Atoi(portstr)
+	isudaPort, err := strconv.Atoi(isudaPortstr)
 	if err != nil {
 		log.Fatalf("Failed to read DB port number from an environment variable ISUDA_DB_PORT.\nError: %s", err.Error())
 	}
-	user := os.Getenv("ISUDA_DB_USER")
-	if user == "" {
-		user = "root"
+	isudaUser := os.Getenv("ISUDA_DB_USER")
+	if isudaUser == "" {
+		isudaUser = "root"
 	}
-	password := os.Getenv("ISUDA_DB_PASSWORD")
-	dbname := os.Getenv("ISUDA_DB_NAME")
-	if dbname == "" {
-		dbname = "isuda"
+	isudaPassword := os.Getenv("ISUDA_DB_PASSWORD")
+	isudaDbname := os.Getenv("ISUDA_DB_NAME")
+	if isudaDbname == "" {
+		isudaDbname = "isuda"
 	}
 
 	db, err = sql.Open("mysql", fmt.Sprintf(
 		"%s:%s@tcp(%s:%d)/%s?loc=Local&parseTime=true",
-		user, password, host, port, dbname,
+		isudaUser, isudaPassword, isudaHost, isudaPort, isudaDbname,
 	))
 	if err != nil {
 		log.Fatalf("Failed to connect to DB: %s.", err.Error())
 	}
 	db.Exec("SET SESSION sql_mode='TRADITIONAL,NO_AUTO_VALUE_ON_ZERO,ONLY_FULL_GROUP_BY'")
 	db.Exec("SET NAMES utf8mb4")
+
+	isutarHost := os.Getenv("ISUTAR_DB_HOST")
+	if isutarHost == "" {
+		isutarHost = "localhost"
+	}
+	isutarPortstr := os.Getenv("ISUTAR_DB_PORT")
+	if isutarPortstr == "" {
+		isutarPortstr = "3306"
+	}
+	isutarPort, err := strconv.Atoi(isutarP)
+	if err != nil {
+		log.Fatalf("Failed to read DB port number from an environment variable ISUTAR_DB_PORT.\nError: %s", err.Error())
+	}
+	isutarUser := os.Getenv("ISUTAR_DB_USER")
+	if isutarUser == "" {
+		isutarUser = "root"
+	}
+	isutarPassword := os.Getenv("ISUTAR_DB_PASSWORD")
+	isutarDbname := os.Getenv("ISUTAR_DB_NAME")
+	if isutarDbname == "" {
+		isutarDbname = "isutar"
+	}
+
+	isutardb, err = isutarsql.Open("mysql", fmt.Sprintf(
+		"%s:%s@tcp(%s:%d)/%s?loc=Local&parseTime=true",
+		isutarUser, isutarPassword, isutarHost, isutarPort, isutarDbname,
+	))
+	if err != nil {
+		log.Fatalf("Failed to connect to DB: %s.", err.Error())
+	}
+	isutardb.Exec("SET SESSION sql_mode='TRADITIONAL,NO_AUTO_VALUE_ON_ZERO,ONLY_FULL_GROUP_BY'")
+	isutardb.Exec("SET NAMES utf8mb4")
 
 	isutarEndpoint = os.Getenv("ISUTAR_ORIGIN")
 	if isutarEndpoint == "" {
