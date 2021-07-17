@@ -5,6 +5,10 @@ all: gogo
 build:
 	make -C go build
 
+truncate-logs:
+	sudo truncate --size 0 /var/log/nginx/access.log
+	sudo truncate --size 0 /var/log/nginx/error.log
+
 stop-services:
 	sudo systemctl stop nginx
 	sudo systemctl stop isuda.go.service
@@ -22,6 +26,8 @@ bench:
 	cd ~/isucon6q && ./isucon6q-bench
 
 kataribe:
-	sudo cat /var/log/nginx/access.log | ./kataribe
+	sudo cp /var/log/nginx/access.log /tmp/last-access.log && sudo chmod 666 /tmp/last-access.log
+	cat /tmp/last-access.log | ./kataribe -conf kataribe.toml > /tmp/kataribe.log
+	cat /tmp/kataribe.log
 
-gogo: stop-services start-services build bench
+gogo: stop-services truncate-logs start-services build bench
