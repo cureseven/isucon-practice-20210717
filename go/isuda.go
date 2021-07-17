@@ -343,9 +343,6 @@ func htmlify(w http.ResponseWriter, r *http.Request, content string) string {
 }
 
 func loadStars(keyword string) []*Star {
-	v := url.Values{}
-	v.Set("keyword", keyword)
-
 	var stars []*Star
 	stars = starsHandler(keyword)
 	return stars
