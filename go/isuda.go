@@ -512,7 +512,8 @@ func main() {
 	k.Methods("GET").HandlerFunc(myHandler(keywordByKeywordHandler))
 	k.Methods("POST").HandlerFunc(myHandler(keywordByKeywordDeleteHandler))
 
-	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./public/")))
 	r.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./public/")))
+
 	log.Fatal(http.ListenAndServe(":5000", r))
 }
