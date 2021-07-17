@@ -3,7 +3,8 @@
 all: gogo
 
 build:
-	make -C go build
+	make -C go isuda
+	make -C go isutar
 
 truncate-logs:
 	sudo truncate --size 0 /var/log/nginx/access.log
