@@ -3,8 +3,8 @@
 all: gogo
 
 build:
-	make -C go isuda
-	make -C go isutar
+	GO111MODULE=off make -C go isuda
+	GO111MODULE=off make -C go isutar
 
 truncate-logs:
 	sudo truncate --size 0 /var/log/nginx/access.log
