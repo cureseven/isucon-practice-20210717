@@ -80,6 +80,6 @@ name = "get keyword"
 #regexp = '=[0-9]+&'
 #replace = '=<num>&'
 #
-#[[replace]]
-#regexp = '=[0-9]+\s'
-#replace = '=<num> '
+[[replace]]
+regexp = '=[0-9]+\s'
+replace = '=<num> '
